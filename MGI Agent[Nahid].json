@@ -1,0 +1,1212 @@
+{
+  "name": "MGI Agent[Nahid]",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.memberreg (id, name, phone)\nVALUES \n    (4, 'Nur', '01568295918');",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -816,
+        208
+      ],
+      "id": "366b65e6-2191-463f-b788-d9e1b8ddb248",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        208
+      ],
+      "id": "06599112-b3ad-4190-baaa-89dbef138add",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "REQUIRED for all product, price, and stock inquiries. Call this tool to search the live database by product name. If the user wants a full list, leave the search query empty.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "products",
+          "mode": "list",
+          "cachedResultName": "products"
+        },
+        "returnAll": true,
+        "combineConditions": "OR",
+        "options": {
+          "outputColumns": [
+            "*"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        560,
+        736
+      ],
+      "id": "0ccde1a9-6c2f-472c-bfd7-da32d453d764",
+      "name": "get product list",
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2160,
+        736
+      ],
+      "id": "e71f52a2-68b2-4c1e-85c4-088efdc632db",
+      "name": "Telegram Trigger1",
+      "webhookId": "749788b2-25cf-4f2d-9a9d-d32c7abf4972",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "^(\\+?88)?01[3-9]\\d{8}$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notRegex"
+                    },
+                    "id": "43c26ec2-4a77-4e12-8cb1-4e49d8747760"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "383521dd-a027-4846-bf66-d19486a59f6e",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "^(\\+?88)?01[3-9]\\d{8}$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -944,
+        816
+      ],
+      "id": "4107e8cc-7661-4ff6-b02c-6a1f69a18763",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98e6a3e7-c9f6-433a-925a-3fd3bd24f321",
+              "name": "clean_phone.text",
+              "value": "={{ $json.message.text.replace(/[^0-9]/g, '').slice(-11) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        832
+      ],
+      "id": "72ea7d23-bcdc-4fb1-85b7-dca3f8114808",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json.name }}, \nMessage: {{ $('Merge').item.json.message.text }}\nVoice: {{ $('Merge').item.json.text }}",
+        "options": {
+          "systemMessage": "=You are the official Meghna Group Virtual Assistant.\n\nCRITICAL: The user is already verified. Do NOT ask for their name or phone number.\n\nGREETING: Start your response by greeting the user professionally using their name: {{ $json.name }}. (Example: 'Hello {{ $json.name }}, welcome to Meghna Group. How can I assist you today?')\n\nTONE: Maintain a professional, corporate, and helpful tone.\n\nYou are an assistant for Meghna Group.\nCRITICAL RULE: You do not know the prices or stock levels of any products. You MUST use the get_product_list tool for EVERY product-related question, even for common items.\nIf the tool returns no data, say you couldn't find that specific item. Never invent prices.\n\nThe user's name is {{ $json.name }}. Always use the get_product_list tool for queries like 'what do you have' or 'how much is [product]'.\"\n\n\n\nFollow these steps strictly:\n\nIdentify Product: If the user wants to buy something but hasn't named it, ask for the name.\nFetch Data: Use get_product_list to find the id, name, and price.\nAsk Quantity: Once you have the price, ask: 'How many [Product Name] would you like to buy? (Price: [Price] per unit)'.\nCalculate Total: When they give the quantity, calculate: Total = Price * Quantity.\nAsk Confirmation: Tell the user: 'The total for [Quantity] [Product] will be [Total Amount]. Should I confirm this order?'\nExecute: ONLY if they say 'Yes', 'Confirm', or 'Ok', use the place_order tool with the product_id and quantity.\nFinalize: Thank {{ $node[\"Execute a SQL query2\"].json.name }} and confirm the order is placed.\n\nThe user's database ID is already handled by the system. When calling the place_order tool, you only need to provide the product_id and the quantity. Do not attempt to provide or guess the user_id.\n\n\nWhen a user asks for their order history:\nUse the Order History tool.\nPresent the results in a clean, easy-to-read list.\nIf no orders are found, tell the user they haven't placed any orders yet.\nUse the user's name {{ $node[\"Execute a SQL query2\"].json.name }} when responding.\nIf the user's order history is empty, then tell the user that, unfortunately, you did not buy anything from us. Would you like to buy anything?\n\nCRITICAL RULE: Only address the user by the name provided in the \"UserInfo\" tool results. If you do not see a name in the tool data, refer to them as \"Valued Customer.\" NEVER guess or invent a name based on the conversation text.\n\nYou are the official Meghna Group Virtual Assistant. You are talking to a user whose name is provided ONLY by the 'User Information' tool. Currently, the user's name is: {{ $node[\"Execute a SQL query2\"].json.name }}. Ignore any other names mentioned in the chat history. If the tool says 'Nur', you MUST call them 'Nur'.\n\nGreet the user by their name, which is: \" + {{ $node[\"Execute a SQL query2\"].json.name }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        496
+      ],
+      "id": "3f10c38f-3801-4077-909f-76198e8e9a7a",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "sanbox-credit",
+          "mode": "list",
+          "cachedResultName": "sandbox-credit"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        80,
+        736
+      ],
+      "id": "406a97c2-2ec6-4423-a053-935275d0f9cc",
+      "name": "Google Vertex Chat Model1",
+      "credentials": {
+        "googleApi": {
+          "id": "vkZHpswtesMaM29Y",
+          "name": "Google Service Account account 3 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "tableName": "n8n_chat_mgi",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        736
+      ],
+      "id": "90df2271-73ab-434d-ab01-85f34de1b090",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "66f57328-82f5-42d9-ad5a-492af1deba83",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        832
+      ],
+      "id": "ad25ad4a-a576-4abd-b1e6-199f16a04a1e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "I'm sorry, I could not find a member registered with that phone number. Access is denied.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        928
+      ],
+      "id": "09e7e1bd-aca1-4fae-9191-15455dee1d50",
+      "name": "Send a text message2",
+      "webhookId": "e3a36ddc-52ab-4a50-b397-fd9b755a8271",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        496
+      ],
+      "id": "2df10fb5-be57-4155-987d-2d8c8958e406",
+      "name": "Send a text message3",
+      "webhookId": "c2d41fb2-53c5-4b83-942f-5c47f012e75c",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, name, phone, telegram_id FROM memberreg \nWHERE telegram_id = '{{ $('Telegram Trigger1').item.json.message.from.id }}' \nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -688,
+        608
+      ],
+      "id": "8077509b-5329-4b0a-ae8f-1af31f94463d",
+      "name": "Execute a SQL query2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "memberreg",
+          "mode": "list",
+          "cachedResultName": "memberreg"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_id": "={{ $('Telegram Trigger1').item.json.message.from.id }}",
+            "phone": "={{ $('Telegram Trigger1').item.json.message.text }}"
+          },
+          "matchingColumns": [
+            "phone"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telegram_id",
+              "displayName": "telegram_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -464,
+        832
+      ],
+      "id": "731ccd83-401a-4fcb-beeb-62d8ee98a763",
+      "name": "Update rows in a table",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2e2f9bab-a7d7-4ebb-b145-35fa524ef1af",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -496,
+        608
+      ],
+      "id": "68e5c14a-830b-473f-be33-9fa4d34dfe43",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "Hello! I don't recognize this account yet. Please send your 11-digit phone number so I can verify your registration.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        656
+      ],
+      "id": "fed808e2-023c-4cd6-bbb5-1d455cbce544",
+      "name": "Send a text message1",
+      "webhookId": "c3e0c246-a9ff-4e8c-baa3-9072e63c5727",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1152,
+        816
+      ],
+      "id": "9188148d-2bd0-443d-8c2d-2809a45d9f9d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1904,
+        1024
+      ],
+      "id": "67f8e6b1-a6d1-4296-8dfd-8720c87e8333",
+      "name": "User Audio",
+      "webhookId": "df5108fb-9401-477c-875b-888a333a675d",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "509d0b62-c314-4065-8be8-f32eb7da4548"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b3e1cc50-d036-435e-acda-36e99cfa7a20",
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1920,
+        720
+      ],
+      "id": "fb130bbf-c687-489e-80d7-8660969e70b5",
+      "name": "Routing for Text & Voice"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 208,
+        "width": 704,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1936,
+        992
+      ],
+      "typeVersion": 1,
+      "id": "cdeb8d44-37ad-4727-9d1a-26bb766b2dea",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "Whoa, that audio is a bit too long! Please keep voice notes under 15 seconds so I can process them quickly.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1904,
+        1232
+      ],
+      "id": "e7ead353-3bc8-407a-9859-91aadf2f692c",
+      "name": "Long Voice Message",
+      "webhookId": "cfc8baae-b541-4ce4-9c44-31b9ad6c7b39",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Grab the text using your exact JSON path!\nlet rawText = $input.first().json.candidates[0].content.parts[0].text || \"\";\n\n// 2. DEBUGGING CHECK: Just in case the audio was truly silent\nif (rawText === \"\") {\n  return { json: { text: \"ERROR: The audio transcript was completely empty.\" } };\n}\n\n// 3. Define the filler words to hunt down (um, uh, ah, etc.)\nconst fillerRegex = /\\b(u+m+|u+h+|a+h+|like|you know|basically|well)\\b/gi;\nlet cleanText = rawText.replace(fillerRegex, \"\");\n\n// 4. Clean up any weird pauses or double spaces\ncleanText = cleanText.replace(/\\.{2,}/g, \" \"); // Removes \"...\"\ncleanText = cleanText.replace(/\\s{2,}/g, \" \"); // Turns double spaces into single spaces\ncleanText = cleanText.trim(); \n\n// 5. FAILSAFE: If the user literally ONLY said \"ummm\", and we deleted it, \n// return the original text so the bot doesn't crash on an empty string.\nif (cleanText === \"\") {\n  cleanText = rawText;\n}\n\n// 6. Output the perfectly clean text to the Merge node!\nreturn {\n  json: {\n    text: cleanText\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        1024
+      ],
+      "id": "b9d1c9ad-e3a9-41e2-b0ec-3216f10ba5c7",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "This service is not allowed",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1696,
+        832
+      ],
+      "id": "98f2f3d2-701b-4f02-a595-c18f5ff3c080",
+      "name": "Fallback Output",
+      "webhookId": "f7980b6e-e8b0-41ec-a15a-4232c4fa6635",
+      "credentials": {
+        "telegramApi": {
+          "id": "IVluilR1ef6MyD9b",
+          "name": "Telegram account 5"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "962c484e-dc80-4256-97bf-360f5584f48e",
+              "leftValue": "={{ $json.message.voice.duration }}",
+              "rightValue": 30,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2128,
+        1040
+      ],
+      "id": "ccd1d0a3-1a7e-4a75-a564-93990828c6ca",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool when the user asks to see their previous orders, order history, or what they bought recently. It returns a list of their last 5 orders including the date, product name, quantity, and total price.",
+        "operation": "executeQuery",
+        "query": "SELECT o.order_date, p.name, o.quantity\nFROM orders o\nJOIN products p ON o.product_id = p.id\nWHERE o.memberreg_id = {{ $('Execute a SQL query2').item.json.id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        848,
+        736
+      ],
+      "id": "44f98675-7076-4786-90ca-1d20f521fa25",
+      "name": "Order History",
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ONLY use this tool after the user has explicitly confirmed they want to buy a product and you have calculated the total price for them. To use this, you MUST provide the product_id (the ID you found from the get_product_list tool) and the quantity (the number of items the user wants). Do not call this tool until the user says 'yes' or 'confirm'.",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "orders",
+          "mode": "list",
+          "cachedResultName": "orders"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('product_id', ``, 'number') }}",
+            "quantity": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quantity', ``, 'number') }}",
+            "order_date": "={{ $now }}",
+            "memberreg_id": "={{ $('Execute a SQL query2').item.json.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "memberreg_id",
+              "displayName": "memberreg_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "order_date",
+              "displayName": "order_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        704,
+        736
+      ],
+      "id": "0e17fb1b-c56a-41f6-ada5-b153a4526a11",
+      "name": "Place Order",
+      "credentials": {
+        "postgres": {
+          "id": "uZ7i0Dcx1WLyfuQC",
+          "name": "Postgres account 5 Nahid"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool for the user's name only according to the telegram_id or phone number provided before in chat memory.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "memberreg",
+          "mode": "list",
+          "cachedResultName": "memberreg"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        416,
+        736
+      ],
+      "id": "2549a58a-69d1-44ff-9fc3-17d4dfef0bab",
+      "name": "Userinfo",
+      "credentials": {
+        "postgres": {
+          "id": "1VBmRlEycaoJvZb6",
+          "name": "Postgres account 7 liza"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aiplatform.googleapis.com/v1/projects/237564720273/locations/global/publishers/google/models/gemini-3-flash-preview:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [\n        {\n          \"text\": \"Please transcribe this audio message accurately.\"\n        },\n        {\n          \"inlineData\": {\n            \"mimeType\": \"audio/ogg\",\n            \"data\": \"{{ $json.audioBase64 }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1552,
+        1024
+      ],
+      "id": "c03cae6c-9634-4eba-8eb3-995e432a68a7",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleApi": {
+          "id": "7SEJmqdI06IW8H3z",
+          "name": "Google Service Account account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let items = $input.all();\n\nfor (let i = 0; i < items.length; i++) {\n  // 1. Force n8n to grab the actual file from the disk instead of the placeholder\n  const audioBuffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n  \n  // 2. Convert the real file into Base64 and save it as text\n  items[i].json.audioBase64 = audioBuffer.toString('base64');\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1744,
+        1024
+      ],
+      "id": "c457eb63-6d27-4a5f-acf1-f0bc538e6dcb",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "width": 576,
+        "color": "#336791"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        384,
+        720
+      ],
+      "typeVersion": 1,
+      "id": "14dc5747-2655-4b66-973d-8cced902166d",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get product list": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Routing for Text & Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update rows in a table": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Audio": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routing for Text & Voice": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "User Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Long Voice Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order History": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Place Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Userinfo": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "483eb920-9b4a-4523-8d8f-72c61911a775",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fdfd304ff5a3cc018025d1fd0fa74bfce4e4115d5e3be6de481873f938aaa13"
+  },
+  "id": "BaeSZ5H6zrPWhpfG",
+  "tags": []
+}
